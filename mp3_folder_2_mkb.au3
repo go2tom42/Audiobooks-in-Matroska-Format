@@ -19,7 +19,7 @@
 #include <AutoItConstants.au3>
 #include <File.au3>
 #include <Date.au3>
-#include <Array.au3>
+
 
 Local $sFilePath = @ScriptDir & '\mp3_folder_2_mkb.ini'
 
