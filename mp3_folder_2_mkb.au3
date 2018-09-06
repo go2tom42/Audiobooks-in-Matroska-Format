@@ -1,20 +1,53 @@
+; mp3_folder_2_mkb ==============================================================================================================
+; Name ..........: mp3_folder_2_mkb
+; Description ...: Requires MediaInfo.dll & mkvmerge.exe
+; Description ...:
+; Description ...:
+; Description ...:
+; Description ...:
+; Description ...:
+; Author ........: tom42
+; Modified ......:
+; Remarks .......:
+; Related .......:
+; Link ..........:
+; Example .......: No
+; ===============================================================================================================================
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_UseX64=n
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <AutoItConstants.au3>
 #include <File.au3>
 #include <Date.au3>
+#include <Array.au3>
+
+Local $sFilePath = @ScriptDir & '\mp3_folder_2_mkb.ini'
+
+For $forinicheck = 1 To 2
+	Local $inicheck = IniReadSection($sFilePath, 'Settings')
+
+		; Check if an error occurred.
+	If @error Then
+		$forinicheck = 1
+		Local $media_info_dll = FileOpenDialog('Select MediaInfo.dll', @WindowsDir & "\", 'MediaInfo.dll (MediaInfo.dll)' , 1)
+		Local $mkvmerge = FileOpenDialog('Select mkvmerge.exe', @WindowsDir & "\", "mkvmerge.exe (mkvmerge.exe)", 1)
+		Local $inicheck[3][2] = [[2, ""], ["media_info_dll", $media_info_dll], ['mkvmerge', $mkvmerge]]
+		IniWriteSection($sFilePath, 'Settings', $inicheck)
+	EndIf
+	$media_info_dll = IniRead ( $sFilePath, "Settings", "media_info_dll", "default" )
+	$mkvmerge = IniRead ( $sFilePath, "Settings", "mkvmerge", "default" )
+Next
 
 Local $Apendto = ''
 Local $sDrive = "", $sDir = "", $sFileName = "", $sExtension = ""
 
 
-$media_info_dll = DllOpen(@ScriptDir & "\MediaInfo.dll")
-If $media_info_dll = -1 Then
-	OnAutoItExitUnRegister("OnAutoItExit")
-	MsgBox(16, "Error", "Was unable to load MediaInfo DLL." & @CRLF & @CRLF & "Reinstalling the application may fix the issue.")
-	Exit
-EndIf
+;~ $media_info_dll = DllOpen(@ScriptDir & "\MediaInfo.dll")
+;~ If $media_info_dll = -1 Then
+;~ 	OnAutoItExitUnRegister("OnAutoItExit")
+;~ 	MsgBox(16, "Error", "Was unable to load MediaInfo DLL." & @CRLF & @CRLF & "Reinstalling the application may fix the issue.")
+;~ 	Exit
+;~ EndIf
 $media_info_handle = DllCall($media_info_dll, "ptr", "MediaInfo_New")
 
 Local $sFileSelectFolder = FileSelectFolder('Select folder of mp3 files', "")
@@ -41,7 +74,7 @@ $path = $aPathSplit[1] & $aPathSplit[2]
 ;~ chapters
 Global $aArray_2D[UBound($aFileList) + 1][6]
 $aArray_2D[1][4] = 0
-$chfile = FileOpen(@WorkingDir & "\chapters.txt", 2)
+$chfile = FileOpen($sFileSelectFolder & "\chapters.txt", 2)
 For $x = 1 To UBound($aFileList) - 1
 	$aArray_2D[$x][0] = $aFileList[$x]
 	$aPathSplit = _PathSplit($aArray_2D[$x][0], $sDrive, $sDir, $sFileName, $sExtension)
@@ -57,7 +90,7 @@ FileClose($chfile)
 
 
 ;~ Generate options.json
-$jsfile = FileOpen(@WorkingDir & "\options.json", 2)
+$jsfile = FileOpen($sFileSelectFolder & "\options.json", 2)
 FileWriteLine($jsfile, '[')
 FileWriteLine($jsfile, '  "--ui-language",')
 FileWriteLine($jsfile, '  "en",')
@@ -104,18 +137,18 @@ FileClose($jsfile)
 
 
 
+RunWait($mkvmerge & ' --gui-mode @options.json', @WorkingDir)
+sleep(2000)
 
-
-
-RunWait('C:\Program Files\MKVToolNix\mkvmerge.exe --gui-mode @options.json', @WorkingDir)
-
-
+FileDelete ($sFileSelectFolder & "\options.json")
+FileDelete ($sFileSelectFolder & "\chapters.txt")
 
 
 Func OnAutoItExit()
 	DllCall($media_info_dll, "none", "MediaInfo_Delete", "ptr", $media_info_handle[0])
 	DllClose($media_info_dll)
 EndFunc   ;==>OnAutoItExit
+
 Func _Get_MediaInfo($path, $info_type)
 	DllCall($media_info_dll, "none", "MediaInfo_Delete", "ptr", $media_info_handle[0])
 	$media_info_handle = DllCall($media_info_dll, "ptr", "MediaInfo_New")
